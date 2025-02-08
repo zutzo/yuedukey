@@ -44,10 +44,10 @@ fi
 cat > "$README_FILE" << EOF
 # 阅读密钥自动更新
 
-当前密钥: $NEW_KEY  
-当前更新时间: $CURRENT_TIME  
-上次更新时间: ${LAST_UPDATE:-$CURRENT_TIME}  
-更新状态: $KEY_STATUS  
+当前密钥: `$NEW_KEY`  
+当前更新时间: `$CURRENT_TIME`   
+上次更新时间: `${LAST_UPDATE:-$CURRENT_TIME}`   
+更新状态: `$KEY_STATUS`  
   
 ## 说明
 此仓库用于自动更新阅读密钥  
