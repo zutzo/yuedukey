@@ -25,12 +25,6 @@ fi
 # 保存新密钥
 echo $NEW_KEY > "$KEY_FILE"
 
-# 获取上次更新时间（如果存在）
-LAST_UPDATE=""
-if [ -f "$README_FILE" ]; then
-    LAST_UPDATE=$(grep "上次更新时间:" "$README_FILE" | sed 's/上次更新时间: //')
-fi
-
 # 准备更新信息
 if [ -z "$OLD_KEY" ]; then
     KEY_STATUS="初始密钥"
@@ -46,7 +40,6 @@ cat > "$README_FILE" << EOF
 
 当前密钥: \`$NEW_KEY\`  
 当前更新时间: \`$CURRENT_TIME\`   
-上次更新时间: \`"${LAST_UPDATE:-$CURRENT_TIME}"\`   
 更新状态: \`"$KEY_STATUS"\`  
   
 ## 说明
