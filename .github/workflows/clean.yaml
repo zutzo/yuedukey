@@ -1,0 +1,75 @@
+name: Clear All Commit History
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to clear (default is the default branch)'
+        required: false
+        default: ''
+  schedule:
+    # Run every 3 days at 00:00 UTC (08:00 Beijing Time)
+    - cron: '0 0 */3 * *'
+
+jobs:
+  clear-history:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Add this permission explicitly
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          # Use token with write permissions
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "zutzo"
+          git config --global user.email "zutzo@users.noreply.github.com"
+
+      - name: Determine target branch
+        id: get-branch
+        run: |
+          if [ -z "${{ github.event.inputs.branch }}" ]; then
+            DEFAULT_BRANCH=$(curl -sL -H "Authorization: token ${{ github.token }}" \
+                              "https://api.github.com/repos/${{ github.repository }}" \
+                              | jq -r '.default_branch')
+            echo "TARGET_BRANCH=${DEFAULT_BRANCH}" >> $GITHUB_ENV
+          else
+            echo "TARGET_BRANCH=${{ github.event.inputs.branch }}" >> $GITHUB_ENV
+          fi
+          echo "Using branch: ${TARGET_BRANCH}"
+
+      - name: Get current date and time (Beijing Time)
+        id: datetime
+        run: |
+          # Calculate Beijing time (UTC+8)
+          BEIJING_DATETIME=$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S')
+          echo "BEIJING_DATETIME=${BEIJING_DATETIME}" >> $GITHUB_ENV
+          echo "Beijing time: ${BEIJING_DATETIME}"
+
+      - name: Clear commit history
+        run: |
+          # Create a temporary branch with no history (orphan branch)
+          git checkout --orphan temp_branch
+          
+          # Add all files
+          git add -A
+          
+          # Commit with current Beijing date and time
+          git commit -m "Initial commit - history cleared (Beijing Time: ${{ env.BEIJING_DATETIME }})"
+          
+          # Delete the target branch and recreate from the temporary branch
+          git branch -D ${{ env.TARGET_BRANCH }} || true
+          git branch -m ${{ env.TARGET_BRANCH }}
+          
+          # Force push using the GitHub token for authentication
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push -f origin ${{ env.TARGET_BRANCH }}
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "History clearing process completed at ${{ env.BEIJING_DATETIME }} Beijing Time."
